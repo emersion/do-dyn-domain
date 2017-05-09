@@ -1,0 +1,9 @@
+[Unit]
+Description=Dynamically update Digital Ocean domain
+
+[Timer]
+OnCalendar=*:0/15
+Persistent=true
+
+[Install]
+WantedBy=multi-user.target

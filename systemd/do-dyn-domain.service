@@ -1,0 +1,8 @@
+[Unit]
+Description=Dynamically update Digital Ocean domain
+After=network-online.target
+
+[Service]
+Type=oneshot
+User=user
+ExecStart=/home/user/bin/do-dyn-domain -domain example.org -record www

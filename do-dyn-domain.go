@@ -16,6 +16,7 @@ import (
 
 var domainName = flag.String("domain", "", "Domain name")
 var recordName = flag.String("record", "", "Record name")
+var gatewayURL = flag.String("gateway-url", "", "Gateway URL (if not provided, will be discovered)")
 
 type Config struct {
 	AccessToken string `yaml:"access-token"`
@@ -44,10 +45,17 @@ func main() {
 	oauthClient := oauth2.NewClient(oauth2.NoContext, config)
 	client := godo.NewClient(oauthClient)
 
-	d, err := upnp.Discover()
+	var d *upnp.IGD
+	if *gatewayURL != "" {
+		d, err = upnp.Load(*gatewayURL)
+	} else {
+		d, err = upnp.Discover()
+	}
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	log.Println("Using gateway", d.Location())
 
 	ip, err := d.ExternalIP()
 	if err != nil {

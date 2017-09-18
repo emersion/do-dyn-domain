@@ -5,8 +5,9 @@ import (
 	"io/ioutil"
 	"log"
 	"path/filepath"
+	"time"
 
-	"github.com/NebulousLabs/go-upnp"
+	"github.com/emersion/go-upnp-igd"
 	"github.com/ProtonMail/go-appdir"
 	"github.com/digitalocean/godo"
 	"github.com/digitalocean/godo/context"
@@ -16,7 +17,6 @@ import (
 
 var domainName = flag.String("domain", "", "Domain name")
 var recordName = flag.String("record", "", "Record name")
-var gatewayURL = flag.String("gateway-url", "", "Gateway URL (if not provided, will be discovered)")
 
 type Config struct {
 	AccessToken string `yaml:"access-token"`
@@ -45,22 +45,20 @@ func main() {
 	oauthClient := oauth2.NewClient(oauth2.NoContext, config)
 	client := godo.NewClient(oauthClient)
 
-	var d *upnp.IGD
-	if *gatewayURL != "" {
-		d, err = upnp.Load(*gatewayURL)
-	} else {
-		d, err = upnp.Discover()
+	devices := igd.Discover(10 * time.Second)
+	if len(devices) == 0 {
+		log.Fatal("No gateway found")
 	}
+	d := devices[0]
+
+	log.Println("Using gateway:", d.ID())
+
+	ip, err := d.GetExternalIPAddress()
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	log.Println("Using gateway", d.Location())
-
-	ip, err := d.ExternalIP()
-	if err != nil {
-		log.Fatal(err)
-	}
+	ipStr := ip.String()
+	log.Println("Discovered external IP address:", ipStr)
 
 	ctx := context.TODO()
 	records, _, err := client.Domains.Records(ctx, *domainName, nil)
@@ -79,14 +77,14 @@ func main() {
 		log.Fatal("No such record")
 	}
 
-	if record.Data == ip {
+	if record.Data == ipStr {
 		log.Println("IP address didn't change")
 		return
 	}
 
 	ctx = context.TODO()
 	_, _, err = client.Domains.EditRecord(ctx, *domainName, record.ID, &godo.DomainRecordEditRequest{
-		Data: ip,
+		Data: ipStr,
 	})
 	if err != nil {
 		log.Fatal(err)

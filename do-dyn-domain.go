@@ -45,11 +45,23 @@ func main() {
 	oauthClient := oauth2.NewClient(oauth2.NoContext, config)
 	client := godo.NewClient(oauthClient)
 
-	devices := igd.Discover(10 * time.Second)
-	if len(devices) == 0 {
+	ch := make(chan igd.Device)
+	done := make(chan error, 1)
+	go func() {
+		done <- igd.Discover(ch, time.Minute)
+	}()
+
+	d := <-ch
+	go func() {
+		for range ch {}
+	}()
+
+	if d == nil {
+		if err := <-done; err != nil {
+			log.Fatal("Cannot discover gateways:", err)
+		}
 		log.Fatal("No gateway found")
 	}
-	d := devices[0]
 
 	log.Println("Using gateway:", d.ID())
 

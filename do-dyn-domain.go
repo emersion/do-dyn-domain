@@ -17,6 +17,7 @@ import (
 
 var domainName = flag.String("domain", "", "Domain name")
 var recordName = flag.String("record", "", "Record name")
+var timeout = flag.Duration("timeout", time.Minute, "Timeout when discovering UPnP routers")
 
 type Config struct {
 	AccessToken string `yaml:"access-token"`
@@ -48,7 +49,7 @@ func main() {
 	ch := make(chan igd.Device)
 	done := make(chan error, 1)
 	go func() {
-		done <- igd.Discover(ch, time.Minute)
+		done <- igd.Discover(ch, *timeout)
 	}()
 
 	d := <-ch

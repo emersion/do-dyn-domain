@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"io/ioutil"
 	"log"
@@ -10,7 +11,6 @@ import (
 	"github.com/emersion/go-upnp-igd"
 	"github.com/ProtonMail/go-appdir"
 	"github.com/digitalocean/godo"
-	"github.com/digitalocean/godo/context"
 	"golang.org/x/oauth2"
 	"gopkg.in/yaml.v2"
 )
